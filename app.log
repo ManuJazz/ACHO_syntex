@@ -1,0 +1,7 @@
+WARNING:apscheduler.executors.default:Run time of job "appointment_reminder (trigger: date[2019-10-09 16:45:00 CEST], next run at: 2019-10-09 16:45:00 CEST)" was missed by 43 days, 22:01:10.956005
+WARNING:apscheduler.executors.default:Run time of job "appointment_reminder (trigger: date[2019-10-15 15:41:00 CEST], next run at: 2019-10-15 15:41:00 CEST)" was missed by 37 days, 23:05:10.959085
+WARNING:apscheduler.executors.default:Run time of job "appointment_reminder (trigger: date[2019-10-15 10:55:00 CEST], next run at: 2019-10-15 10:55:00 CEST)" was missed by 38 days, 3:51:10.964034
+WARNING:apscheduler.executors.default:Run time of job "appointment_reminder (trigger: date[2019-10-16 13:35:00 CEST], next run at: 2019-10-16 13:35:00 CEST)" was missed by 37 days, 1:11:10.967040
+WARNING:apscheduler.executors.default:Run time of job "appointment_reminder (trigger: date[2019-10-18 12:43:00 CEST], next run at: 2019-10-18 12:43:00 CEST)" was missed by 35 days, 2:03:10.971935
+WARNING:apscheduler.executors.default:Run time of job "appointment_reminder (trigger: date[2019-11-04 18:44:00 CET], next run at: 2019-11-04 18:44:00 CET)" was missed by 17 days, 19:02:10.975884
+WARNING:apscheduler.executors.default:Run time of job "appointment_reminder (trigger: date[2019-11-15 13:23:00 CET], next run at: 2019-11-15 13:23:00 CET)" was missed by 7 days, 0:23:10.991821
