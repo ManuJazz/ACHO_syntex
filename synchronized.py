@@ -54,8 +54,8 @@ def recordatorio(intentMessage, e):
                                             session_init_send_intent_not_recognized=True, custom_data=None)
     with open("/var/lib/snips/skills/ManuJazz.ACHOSintex/monitoring_output.txt", "a") as text_file:
         text_file.write(content)
-	identity = e.med
-	backReminder.add_job(recordatorio, 'interval', seconds=20, start_date=date, id=identity, args=['default', e], max_instances=10000)
+    identity = e.med
+    backReminder.add_job(recordatorio, 'interval', seconds=20, id=identity, args=['default', e])
 
 
 def appointment_reminder(intentMessage, appointment):
