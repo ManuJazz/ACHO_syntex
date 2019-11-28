@@ -30,12 +30,12 @@ def read_configuration_file(configuration_file):
 
 def subscribe_answer_hi(hermes, intentMessage):
     conf = read_configuration_file(CONFIG_INI)
-    mqttClient.publish_end_session(intentMessage, 'Me alegra oir eso')
+    mqttClient.publish_end_session('default', 'Me alegra oir eso')
 
 
 def subscribe_simple_hi(hermes, intentMessage):
     conf = read_configuration_file(CONFIG_INI)
-    mqttClient.publish_start_session_action(site_id=intentMessage, session_init_text=u'Hola. ¿Qué tal estás?',
+    mqttClient.publish_start_session_action(site_id='default', session_init_text=u'Hola. ¿Qué tal estás?',
                                             session_init_intent_filter=["ManuJazz:SimpleHi_answer"],
                                             session_init_can_be_enqueued=True,
                                             session_init_send_intent_not_recognized=True, custom_data=None)
