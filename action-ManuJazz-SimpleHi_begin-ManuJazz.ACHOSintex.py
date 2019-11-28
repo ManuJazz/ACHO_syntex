@@ -34,7 +34,7 @@ def subscribe_answer_hi(hermes, intentMessage):
 
 def subscribe_simple_hi(hermes, intentMessage):
     mqttClient.publish_end_session(intentMessage.session_id, u'Hola. ¿Qué tal estás?')
-    mqttClient.publish_start_session_action(site_id=intentMessage.session_id, session_init_text=u'Hola. ¿Qué tal estás?',
+    mqttClient.publish_start_session_action(site_id=intentMessage.session_id, session_init_text="",
                                             session_init_intent_filter=["ManuJazz:SimpleHi_answer"],
                                             session_init_can_be_enqueued=True,
                                             session_init_send_intent_not_recognized=True, custom_data=None)
