@@ -164,12 +164,12 @@ class update_prescriptions(threading.Thread):
 def subscribe_taken_medicine(hermes, intentMessage):
     conf = read_configuration_file(CONFIG_INI)
     backReminder.remove_all_jobs(None)
-    mqttClient.publish_end_session(intentMessage.session_id, 'Ok. Me lo apunto')
+    mqttClient.publish_end_session(intentMessage.session_id, 'Perfecto. Me lo apunto')
 
 
 def subscribe_not_taken_medicine(hermes, intentMessage):
     conf = read_configuration_file(CONFIG_INI)
-    mqttClient.publish_end_session(intentMessage.session_id, u'Ok. Te lo recordaré dentro de un momento')
+    mqttClient.publish_end_session(intentMessage.session_id, u'De acuerdo. Te lo recordaré dentro de un momento')
 
 
 if __name__ == "__main__":
