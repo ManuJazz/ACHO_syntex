@@ -11,6 +11,7 @@ import os.path
 import json
 import time
 import logging
+import mysql.connector as mariadb
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime, timedelta, date
@@ -18,6 +19,44 @@ import logging
 
 CONFIGURATION_ENCODING_FORMAT = "utf-8"
 CONFIG_INI = "config.ini"
+
+# database connection
+mariadb_connection = mariadb.connect(user='root', password='', database='AchoSintex')
+cursor = mariadb_connection.cursor()
+global_prescription = None
+
+
+def insert_prescription(prescription):
+    query = "INSERT INTO Prescription(medicine, description, days, takes) VALUES (%s, %s, %s, %s)"
+    args = (prescription.medicine, prescription.description, prescription.days, prescription.takes)
+    cursor.execute(query, args)
+    mariadb_connection.commit()
+
+
+def insert_appointment(appointment):
+    query = "INSERT INTO Appointment(subject, place, day, time) VALUES (%s, %s, %s, %s)"
+    args = (appointment.subject, appointment.place, appointment.date, appointment.hour)
+    cursor.execute(query, args)
+    mariadb_connection.commit()
+
+
+def insert_taken(take):
+    query = "INSERT INTO Taken(medicine, day, hour, taken) VALUES (%s, %s, %s, %s)"
+    args = (take.medicine, take.day, take.hour, take.taken)
+    cursor.execute(query, args)
+    mariadb_connection.commit()
+
+
+def clean_appointments():
+    query = "DELETE FROM Appointment;"
+    cursor.execute(query)
+    mariadb_connection.commit()
+
+
+def clean_prescriptions():
+    query = "DELETE FROM Prescription;"
+    cursor.execute(query)
+    mariadb_connection.commit()
 
 
 class SnipsConfigParser(configparser.SafeConfigParser):
@@ -43,19 +82,34 @@ def say(intentMessage, text):
 # mqttClient.publish_start_session_action(site_id='default', session_init_text = 'Te la has tomado', session_init_intent_filter = ["ManuJazz:Affirmation", "ManuJazz:Negation"], session_init_can_be_enqueued=True, session_init_send_intent_not_recognized=True, custom_data=None)
 
 
-def recordatorio(intentMessage, e):
+def prescription_reminder(intentMessage, prescription):
+    global global_prescription
+    global_prescription = prescription
     print("Evento detectado para: %s" % datetime.now())
-    say(intentMessage, "Hola. A esta hora debes tomar " + e.med + ". " + e.description)
-    content = "[" + str(datetime.today()) + "] Reminder announced: " + e.med + "\n"
+    say(intentMessage, "Hola. A esta hora debes tomar " + prescription.medicine + ". " + prescription.description)
+    content = "[" + str(datetime.today()) + "] Reminder announced: " + prescription.medicine + "\n"
     print(content)
     mqttClient.publish_start_session_action(site_id=intentMessage, session_init_text=u'¿Te la has tomado?',
                                             session_init_intent_filter=["ManuJazz:Affirmation", "ManuJazz:Negation"],
                                             session_init_can_be_enqueued=True,
                                             session_init_send_intent_not_recognized=True, custom_data=None)
+
+    # reminder is saved
     with open("/var/lib/snips/skills/ManuJazz.ACHOSintex/monitoring_output.txt", "a") as text_file:
         text_file.write(content)
-    identity = e.med
-    backReminder.add_job(recordatorio, 'interval', seconds=20, id=identity, args=['default', e])
+
+    # notices are incremented
+    global_prescription.notices = global_prescription.notices + 1
+    # check if first time announced
+    identity = global_prescription.medicine
+    if global_prescription.notices == 1:
+        # if it's first time -> add back reminder!
+        backReminder.add_job(prescription_reminder, 'interval', seconds=40, id=identity,
+                         args=['default', global_prescription])
+
+    # check if it's been three time announced
+    if global_prescription.notices == 3:
+        backReminder.remove_job(identity)
 
 
 def appointment_reminder(intentMessage, appointment):
@@ -84,6 +138,23 @@ class Appointment(object):
         self.hour = hour
 
 
+class Prescription(object):
+    def __init__(self, medicine, description, days, take):
+        self.medicine = medicine
+        self.description = description
+        self.days = days
+        self.takes = take
+        self.notices = 0
+
+
+class Taken(object):
+    def __init__(self, medicine, day, hour, taken):
+        self.medicine = medicine
+        self.day = day
+        self.hour = hour
+        self.taken = taken
+
+
 class update_prescriptions(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
@@ -109,6 +180,7 @@ class update_prescriptions(threading.Thread):
                 scheduler.shutdown(wait=False)
                 scheduler = BackgroundScheduler({'apscheduler.timezone': 'Europe/Madrid'})
                 scheduler.start()
+                clean_prescriptions()
                 with open(filename, 'r') as f:
                     datastore = json.load(f)
                     print(datastore)
@@ -145,10 +217,14 @@ class update_prescriptions(threading.Thread):
                             date = datetime.strptime(fecha, "%Y-%m-%d %H:%M:%S")
                             med = name
                             e = Event(med, date, description)
+                            prescription = Prescription(name, description, fecha, take)
                             identity = fecha + " - " + med
-                            scheduler.add_job(recordatorio, 'interval', days=1, start_date=date, id=identity,
-                                              args=['default', e], max_instances=10000)
+                            scheduler.add_job(prescription_reminder, 'interval', days=1, start_date=date, id=identity,
+                                              args=['default', prescription], max_instances=10000)
                             logging.basicConfig()
+                            # insertion prescription
+                            insert_prescription(prescription)
+
                 os.system('mv /bluetooth/full_information.txt /var/lib/snips/skills/ManuJazz.ACHOSintex/old_content')
                 with open("/var/lib/snips/skills/ManuJazz.ACHOSintex/monitoring_output.txt", "a") as text_file:
                     content = "[Trying... sync done announce]"
@@ -162,14 +238,32 @@ class update_prescriptions(threading.Thread):
 
 
 def subscribe_taken_medicine(hermes, intentMessage):
-    conf = read_configuration_file(CONFIG_INI)
-    backReminder.remove_all_jobs(None)
-    mqttClient.publish_end_session(intentMessage.session_id, 'Perfecto. Me lo apunto')
+    global global_prescription
+    if global_prescription is not None:
+        # back reminder is deleted
+        identity = global_prescription.medicine
+        backReminder.remove_job(identity)
+
+        # medicine take is registered
+        now = datetime.now()
+        dt_string = now.strftime("%Y-%m-%d")
+        take = Taken(global_prescription.medicine, dt_string, global_prescription.takes, "1")
+        insert_taken(take)
+        global_prescription.notices = 0
+        mqttClient.publish_end_session(intentMessage.session_id, 'Perfecto. Me lo apunto')
 
 
 def subscribe_not_taken_medicine(hermes, intentMessage):
-    conf = read_configuration_file(CONFIG_INI)
-    mqttClient.publish_end_session(intentMessage.session_id, u'De acuerdo. Te lo recordaré dentro de un momento')
+    if global_prescription is not None:
+        now = datetime.now()
+        dt_string = now.strftime("%Y-%m-%d")
+        take = Taken(global_prescription.medicine, dt_string, global_prescription.takes, "0")
+        insert_taken(take)
+        mqttClient.publish_end_session(intentMessage.session_id, u'De acuerdo. Te lo recordaré dentro de un momento')
+        '''
+        if global_prescription.notices == 1:
+            identity = global_prescription.medicine
+        '''
 
 
 if __name__ == "__main__":
