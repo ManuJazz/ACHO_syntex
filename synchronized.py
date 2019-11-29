@@ -257,7 +257,7 @@ def subscribe_not_taken_medicine(hermes, intentMessage):
     if global_prescription is not None:
         now = datetime.now()
         dt_string = now.strftime("%Y-%m-%d")
-        take = Taken(global_prescription.medicine, dt_string, global_prescription.takes, "0")
+        take = Taken(global_prescription.medicine, dt_string, global_prescription.takes[:-3], "0")
         insert_taken(take)
         mqttClient.publish_end_session(intentMessage.session_id, u'De acuerdo. Te lo recordaré dentro de un momento')
         '''

@@ -48,7 +48,7 @@ def subscribe_intent_callback(hermes, intentMessage):
     sentence = u"Según lo que tengo registrado, hoy has tomado: "
     medicine = ""
     for take in rows:
-        medicine = medicine + take.medicine + " a las "+take.hour+", "
+        medicine = medicine + take[1] + " a las "+take[2]+", "
     mqttClient.publish_end_session(intentMessage.session_id, sentence + medicine)
 
 
@@ -56,4 +56,5 @@ if __name__ == "__main__":
     mqtt_opts = MqttOptions()
     with Hermes(mqtt_options=mqtt_opts) as h, Hermes(mqtt_options=mqtt_opts) as mqttClient:
         h.subscribe_intent("ManuJazz:Taken_request", subscribe_intent_callback) \
+            .subscribe_intent("ManuJazz:Medicine_query", subscribe_intent_callback) \
             .start()
