@@ -42,7 +42,7 @@ def insert_appointment(appointment):
 
 def insert_taken(take):
     query = "INSERT INTO Taken(medicine, day, hour, taken) VALUES (%s, %s, %s, %s)"
-    args = (take.medicine, take.day, take.hour, take.taken)
+    args = (take.medicine, take.day, take.hour[:-3], take.taken)
     cursor.execute(query, args)
     mariadb_connection.commit()
 
@@ -240,9 +240,10 @@ class update_prescriptions(threading.Thread):
 def subscribe_taken_medicine(hermes, intentMessage):
     global global_prescription
     if global_prescription is not None:
-        # back reminder is deleted
-        identity = global_prescription.medicine
-        backReminder.remove_job(identity)
+        if global_prescription.notices != 3:
+            # back reminder is deleted
+            identity = global_prescription.medicine
+            backReminder.remove_job(identity)
 
         # medicine take is registered
         now = datetime.now()
@@ -257,7 +258,7 @@ def subscribe_not_taken_medicine(hermes, intentMessage):
     if global_prescription is not None:
         now = datetime.now()
         dt_string = now.strftime("%Y-%m-%d")
-        take = Taken(global_prescription.medicine, dt_string, global_prescription.takes[:-3], "0")
+        take = Taken(global_prescription.medicine, dt_string, global_prescription.takes, "0")
         insert_taken(take)
         mqttClient.publish_end_session(intentMessage.session_id, u'De acuerdo. Te lo recordaré dentro de un momento')
         '''
