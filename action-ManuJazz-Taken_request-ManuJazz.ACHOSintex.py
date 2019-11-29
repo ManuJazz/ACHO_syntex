@@ -21,7 +21,8 @@ def get_taken_pills():
     now = datetime.now()
     dt_string = now.strftime("%Y-%m-%d")
     query = "SELECT * FROM Taken WHERE taken = '1' AND day = %s"
-    cursor.execute(query, dt_string)
+    args = (dt_string, )
+    cursor.execute(query, args)
     rows = cursor.fetchall()
     return rows
 
