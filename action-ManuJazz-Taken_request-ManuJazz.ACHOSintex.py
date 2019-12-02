@@ -44,16 +44,7 @@ def read_configuration_file(configuration_file):
 
 
 def subscribe_intent_callback(hermes, intentMessage):
-    mqttClient.publish_end_session(intentMessage.session_id, "Holi.")
-    mariadb_connection = mariadb.connect(user='root', password='', database='AchoSintex')
-    cursor = mariadb_connection.cursor()
-    now = datetime.now()
-    dt_string = now.strftime("%Y-%m-%d")
-    query = "SELECT * FROM Taken WHERE taken = '1' AND day = %s"
-    args = (dt_string, )
-    cursor.execute(query, args)
-    rows = cursor.fetchall()
-    #rows = get_taken_pills()
+    rows = get_taken_pills()
     sentence = u"Según lo que tengo registrado, hoy has tomado: "
     medicine = ""
     for take in rows:
