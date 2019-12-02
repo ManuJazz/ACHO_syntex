@@ -65,5 +65,4 @@ if __name__ == "__main__":
     mqtt_opts = MqttOptions()
     with Hermes(mqtt_options=mqtt_opts) as h, Hermes(mqtt_options=mqtt_opts) as mqttClient:
         h.subscribe_intent("ManuJazz:Taken_request", subscribe_intent_callback) \
-            .subscribe_intent("ManuJazz:Medicine_query", subscribe_intent_callback) \
             .start()
