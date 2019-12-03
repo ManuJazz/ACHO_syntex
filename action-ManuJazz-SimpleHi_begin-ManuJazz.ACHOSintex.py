@@ -7,9 +7,13 @@ from hermes_python.hermes import Hermes
 from hermes_python.ffi.utils import MqttOptions
 from hermes_python.ontology import *
 import io
+from datetime import datetime, timedelta, date
 
 CONFIGURATION_ENCODING_FORMAT = "utf-8"
 CONFIG_INI = "config.ini"
+
+mariadb_connection = None
+cursor = None
 
 
 class SnipsConfigParser(configparser.SafeConfigParser):
@@ -28,8 +32,30 @@ def read_configuration_file(configuration_file):
         return dict()
 
 
+def connect_database():
+    global mariadb_connection
+    global cursor
+    mariadb_connection = mariadb.connect(host='localhost', user='root', password='', database='AchoSintex',
+                                         connection_timeout=20)
+    cursor = mariadb_connection.cursor()
+
+
+def insert_mood(_mood):
+    global mariadb_connection
+    global cursor
+    now = datetime.now()
+    dt_string = now.strftime("%Y-%m-%d")
+    query = "INSERT INTO Mood(mood, date) VALUES (%s, %s)"
+    args = (_mood, dt_string)
+    cursor.execute(query, args)
+    mariadb_connection.commit()
+
+
 def subscribe_answer_hi(hermes, intentMessage):
-    mqttClient.publish_end_session(intentMessage.session_id, 'Me alegra oir eso')
+    connect_database()
+    answer = intentMessage.input
+    insert_mood(answer)
+    mqttClient.publish_end_session(intentMessage.session_id, u'¡Tomo nota! Avísame si necesitas algo.')
 
 
 def subscribe_simple_hi(hermes, intentMessage):
@@ -38,7 +64,6 @@ def subscribe_simple_hi(hermes, intentMessage):
                                             session_init_intent_filter=["ManuJazz:SimpleHi_answer"],
                                             session_init_can_be_enqueued=True,
                                             session_init_send_intent_not_recognized=True, custom_data=None)
-
 
 
 if __name__ == "__main__":
