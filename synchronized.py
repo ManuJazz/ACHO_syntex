@@ -13,6 +13,8 @@ import time
 import logging
 import mysql.connector as mariadb
 
+import subprocess
+
 from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime, timedelta, date
 import logging
@@ -23,10 +25,12 @@ CONFIG_INI = "config.ini"
 # database connection
 cursor = None
 global_prescription = None
+mariadb_connection = None
 
 
 def insert_prescription(prescription):
     global cursor
+    global mariadb_connection
     query = "INSERT INTO Prescription(medicine, description, days, takes) VALUES (%s, %s, %s, %s)"
     args = (prescription.medicine, prescription.description, prescription.days, prescription.takes)
     cursor.execute(query, args)
@@ -35,6 +39,7 @@ def insert_prescription(prescription):
 
 def insert_appointment(appointment):
     global cursor
+    global mariadb_connection
     query = "INSERT INTO Appointment(subject, place, day, time) VALUES (%s, %s, %s, %s)"
     args = (appointment.subject, appointment.place, appointment.date, appointment.hour)
     cursor.execute(query, args)
@@ -43,6 +48,7 @@ def insert_appointment(appointment):
 
 def insert_taken(take):
     global cursor
+    global mariadb_connection
     query = "INSERT INTO Taken(medicine, day, hour, taken) VALUES (%s, %s, %s, %s)"
     args = (take.medicine, take.day, take.hour[:-3], take.taken)
     cursor.execute(query, args)
@@ -51,6 +57,7 @@ def insert_taken(take):
 
 def clean_appointments():
     global cursor
+    global mariadb_connection
     query = "DELETE FROM Appointment;"
     cursor.execute(query)
     mariadb_connection.commit()
@@ -58,6 +65,7 @@ def clean_appointments():
 
 def clean_prescriptions():
     global cursor
+    global mariadb_connection
     query = "DELETE FROM Prescription;"
     cursor.execute(query)
     mariadb_connection.commit()
@@ -109,7 +117,7 @@ def prescription_reminder(intentMessage, prescription):
     if global_prescription.notices == 1:
         # if it's first time -> add back reminder!
         backReminder.add_job(prescription_reminder, 'interval', seconds=40, id=identity,
-                         args=['default', global_prescription])
+                             args=['default', global_prescription])
 
     # check if it's been three time announced
     if global_prescription.notices == 3:
@@ -169,13 +177,21 @@ class update_prescriptions(threading.Thread):
 
         time.sleep(10)
         global cursor
-        mariadb_connection = mariadb.connect(user='root', password='', database='AchoSintex')
+        global mariadb_connection
+
+        while subprocess.Popen('service mysqld status', shell=True, stdout=subprocess.PIPE).stdout.read().decode(
+                'utf-8').find('Active: active') == -1:
+            time.sleep(1)
+
+            # once mysql is ready it will break out of while loop and continue to
+        mariadb_connection = mariadb.connect(host='localhost', user='root', password='', database='AchoSintex',
+                                             connection_timeout=20)
         cursor = mariadb_connection.cursor()
 
         with open("/var/lib/snips/skills/ManuJazz.ACHOSintex/monitoring_output.txt", "a") as text_file:
             content = "[Thread restarted] [Trying... first announce]"
             text_file.write(content)
-        # say('Announce', "Hola. Ya estoy operativo y listo para ayudarte.")
+        say('Announce', "Hola. Ya estoy operativo y listo para ayudarte.")
 
         with open("/var/lib/snips/skills/ManuJazz.ACHOSintex/monitoring_output.txt", "a") as text_file:
             content = "[Done... first announce]\n"
