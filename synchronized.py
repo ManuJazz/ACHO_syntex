@@ -275,6 +275,7 @@ def subscribe_taken_medicine(hermes, intentMessage):
         take = Taken(global_prescription.medicine, dt_string, global_prescription.takes, "1")
         insert_taken(take)
         global_prescription.notices = 0
+        global_prescription = None
         mqttClient.publish_end_session(intentMessage.session_id, 'Perfecto. Me lo apunto')
 
 
