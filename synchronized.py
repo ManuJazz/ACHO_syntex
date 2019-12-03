@@ -21,12 +21,12 @@ CONFIGURATION_ENCODING_FORMAT = "utf-8"
 CONFIG_INI = "config.ini"
 
 # database connection
-mariadb_connection = mariadb.connect(user='root', password='', database='AchoSintex')
-cursor = mariadb_connection.cursor()
+cursor = None
 global_prescription = None
 
 
 def insert_prescription(prescription):
+    global cursor
     query = "INSERT INTO Prescription(medicine, description, days, takes) VALUES (%s, %s, %s, %s)"
     args = (prescription.medicine, prescription.description, prescription.days, prescription.takes)
     cursor.execute(query, args)
@@ -34,6 +34,7 @@ def insert_prescription(prescription):
 
 
 def insert_appointment(appointment):
+    global cursor
     query = "INSERT INTO Appointment(subject, place, day, time) VALUES (%s, %s, %s, %s)"
     args = (appointment.subject, appointment.place, appointment.date, appointment.hour)
     cursor.execute(query, args)
@@ -41,6 +42,7 @@ def insert_appointment(appointment):
 
 
 def insert_taken(take):
+    global cursor
     query = "INSERT INTO Taken(medicine, day, hour, taken) VALUES (%s, %s, %s, %s)"
     args = (take.medicine, take.day, take.hour[:-3], take.taken)
     cursor.execute(query, args)
@@ -48,12 +50,14 @@ def insert_taken(take):
 
 
 def clean_appointments():
+    global cursor
     query = "DELETE FROM Appointment;"
     cursor.execute(query)
     mariadb_connection.commit()
 
 
 def clean_prescriptions():
+    global cursor
     query = "DELETE FROM Prescription;"
     cursor.execute(query)
     mariadb_connection.commit()
@@ -164,6 +168,10 @@ class update_prescriptions(threading.Thread):
         scheduler.start()
 
         time.sleep(10)
+        global cursor
+        mariadb_connection = mariadb.connect(user='root', password='', database='AchoSintex')
+        cursor = mariadb_connection.cursor()
+
         with open("/var/lib/snips/skills/ManuJazz.ACHOSintex/monitoring_output.txt", "a") as text_file:
             content = "[Thread restarted] [Trying... first announce]"
             text_file.write(content)
