@@ -31,9 +31,12 @@ def get_taken_pills():
     dt_string = now.strftime("%Y-%m-%d")
     query = "SELECT * FROM Taken WHERE taken = '1' AND day = %s"
     args = (dt_string,)
-    cursor.execute(query, args)
-    rows = cursor.fetchall()
-    return rows
+    rows_count = cursor.execute(query, args)
+    if rows_count > 0:
+        rows = cursor.fetchall()
+        return rows
+    else:
+        return None
 
 
 def insert_interaction(_interaction):
@@ -85,9 +88,13 @@ def action_wrapper(hermes, intentMessage, conf):
     rows = get_taken_pills()
     sentence = u"Según lo que tengo registrado, hoy has tomado: "
     medicine = ""
-    for take in rows:
-        medicine = medicine + take[1] + " a las " + take[2] + ", "
-    mqttClient.publish_end_session(intentMessage.session_id, sentence + medicine)
+    if rows is not None:
+        for take in rows:
+            medicine = medicine + take[1] + " a las " + take[2] + ", "
+        message = sentence + medicine
+    else:
+        message = "Todavía no has tomado ninguna medicina"
+    mqttClient.publish_end_session(intentMessage.session_id, message)
 
 
 if __name__ == "__main__":
