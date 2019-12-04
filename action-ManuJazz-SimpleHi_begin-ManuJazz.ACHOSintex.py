@@ -16,6 +16,7 @@ CONFIG_INI = "config.ini"
 mariadb_connection = None
 cursor = None
 isAnswer = False
+isChecking = False
 
 
 class SnipsConfigParser(configparser.SafeConfigParser):
@@ -92,31 +93,44 @@ def subscribe_answer_hi(hermes, intentMessage):
 
 
 def subscribe_affirmation(hermes, intentMessage):
-    mqttClient.publish_end_session(intentMessage.session_id, 'Vaya, la próxima vez hablaré más fuerte.')
+    global isChecking
+    if isChecking is True:
+        mqttClient.publish_end_session(intentMessage.session_id, 'Vaya, la próxima vez hablaré más fuerte.')
+        isChecking = False
 
 
 def subscribe_negation(hermes, intentMessage):
-    mqttClient.publish_end_session(intentMessage.session_id,
+    global isChecking
+    if isChecking is True:
+        mqttClient.publish_end_session(intentMessage.session_id,
                                    'Entiendo. Si sales de casa no olvides llevar tus pastillas.')
+        isChecking = False
 
 
 def subscribe_simple_hi(hermes, intentMessage):
     connect_database()
     insert_interaction(intentMessage.input)
     global isAnswer
+    global isChecking
     isAnswer = True
 
     rows = get_forgotten_pills()
     if rows is not None:
+        isChecking = True
         mqttClient.publish_end_session(intentMessage.session_id,
                                        u'Hola. Antes te he avisado de una toma de pastillas pero no me has respondido. ¿Estabas en casa?')
-    else:
-        mqttClient.publish_end_session(intentMessage.session_id, u'Hola. ¿Qué tal estás?')
-
-    mqttClient.publish_start_session_action(site_id='default', session_init_text="",
-                                            session_init_intent_filter=["ManuJazz:SimpleHi_answer", "ManuJazz:Affirmation", "ManuJazz:Negation"],
+        mqttClient.publish_start_session_action(site_id='default', session_init_text="",
+                                            session_init_intent_filter=["ManuJazz:Affirmation", "ManuJazz:Negation"],
                                             session_init_can_be_enqueued=True,
                                             session_init_send_intent_not_recognized=True, custom_data=None)
+
+    else:
+        isChecking = False
+        mqttClient.publish_end_session(intentMessage.session_id, u'Hola. ¿Qué tal estás?')
+        mqttClient.publish_start_session_action(site_id='default', session_init_text="",
+                                                session_init_intent_filter=["ManuJazz:SimpleHi_answer"],
+                                                session_init_can_be_enqueued=True,
+                                                session_init_send_intent_not_recognized=True, custom_data=None)
 
 
 if __name__ == "__main__":
