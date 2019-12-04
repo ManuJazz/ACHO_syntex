@@ -67,7 +67,7 @@ def insert_interaction(_interaction):
 def subscribe_answer_hi(hermes, intentMessage):
     connect_database()
     answer = intentMessage.input
-    insert_interaction(answer)
+    #insert_interaction(answer)
     insert_mood(answer)
     mqttClient.publish_end_session(intentMessage.session_id, u'¡Tomo nota! Avísame si necesitas algo.')
 
