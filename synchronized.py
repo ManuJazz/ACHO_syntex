@@ -121,6 +121,11 @@ def prescription_reminder(intentMessage, prescription):
 
     # check if it's been three time announced
     if global_prescription.notices == 3:
+        # registered as non answered
+        now = datetime.now()
+        dt_string = now.strftime("%Y-%m-%d")
+        take = Taken(global_prescription.medicine, dt_string, global_prescription.takes, "2")
+        insert_taken(take)
         backReminder.remove_job(identity)
 
 
