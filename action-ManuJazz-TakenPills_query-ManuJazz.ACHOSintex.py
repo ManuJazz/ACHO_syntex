@@ -12,12 +12,21 @@ from datetime import datetime, timedelta, date
 CONFIGURATION_ENCODING_FORMAT = "utf-8"
 CONFIG_INI = "config.ini"
 
+mariadb_connection = None
+cursor = None
 
-def get_taken_pills():
-    # database connection
-    mariadb_connection = mariadb.connect(user='root', password='', database='AchoSintex')
+
+def connect_database():
+    global mariadb_connection
+    global cursor
+    mariadb_connection = mariadb.connect(host='localhost', user='root', password='', database='AchoSintex',
+                                         connection_timeout=20)
     cursor = mariadb_connection.cursor()
 
+
+def get_taken_pills():
+    global mariadb_connection
+    global cursor
     now = datetime.now()
     dt_string = now.strftime("%Y-%m-%d")
     query = "SELECT * FROM Taken WHERE taken = '1' AND day = %s"
@@ -25,6 +34,18 @@ def get_taken_pills():
     cursor.execute(query, args)
     rows = cursor.fetchall()
     return rows
+
+
+def insert_interaction(_interaction):
+    global mariadb_connection
+    global cursor
+    now = datetime.now()
+    dt_string = now.strftime("%Y-%m-%d")
+    hour_string = now.strftime("%HH:%MM")
+    query = "INSERT INTO Interaction(message, date, hour) VALUES (%s, %s, %s)"
+    args = (_interaction, dt_string, hour_string)
+    cursor.execute(query, args)
+    mariadb_connection.commit()
 
 
 class SnipsConfigParser(configparser.SafeConfigParser):
@@ -58,7 +79,8 @@ def action_wrapper(hermes, intentMessage, conf):
      
     Refer to the documentation for further details. 
     """
-
+    connect_database()
+    insert_interaction(intentMessage.input)
     print("TakenPills_query")
     rows = get_taken_pills()
     sentence = u"Según lo que tengo registrado, hoy has tomado: "
