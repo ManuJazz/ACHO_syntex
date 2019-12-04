@@ -120,22 +120,21 @@ def subscribe_simple_hi(hermes, intentMessage):
     isAnswer = True
 
     prob_reminder = random.randint(0, 3)
-    if prob_reminder == 0:
-        rows = get_forgotten_pills()
-        if rows is not None:
-            isChecking = True
-            mqttClient.publish_end_session(intentMessage.session_id,
-                                           u'Hola. Antes te he avisado de una toma de pastillas pero no me has respondido. Si sales recuerda llevar tus pastillas contigo. Por cierto, ¿qué tal estás?')
-            '''mqttClient.publish_start_session_action(site_id='default', session_init_text="",
-                                                session_init_intent_filter=["ManuJazz:Affirmation", "ManuJazz:Negation"],
-                                                session_init_can_be_enqueued=True,
-                                                session_init_send_intent_not_recognized=True, custom_data=None)
-            '''
+    rows = get_forgotten_pills()
+    if prob_reminder == 0 and rows is not None:
+        isChecking = True
+        mqttClient.publish_end_session(intentMessage.session_id,
+                                       u'Hola. Antes te he avisado de una toma de pastillas pero no me has respondido. Si sales recuerda llevar tus pastillas contigo. Por cierto, ¿qué tal estás?')
+        '''mqttClient.publish_start_session_action(site_id='default', session_init_text="",
+                                            session_init_intent_filter=["ManuJazz:Affirmation", "ManuJazz:Negation"],
+                                            session_init_can_be_enqueued=True,
+                                            session_init_send_intent_not_recognized=True, custom_data=None)
+        '''
 
     else:
         isChecking = False
         hi_message = ["Hola", "Buenas", u"¿Qué hay?"]
-        prob_advice = random.randint(0, 2)
+        prob_advice = random.randint(0, 3)
         advice = ""
         if prob_advice is 0:
             advices = [u"Recuerda beber abundante agua. Te mantendrá hidratado y tiene importantes beneficios",

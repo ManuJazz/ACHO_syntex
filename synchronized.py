@@ -128,7 +128,7 @@ def prescription_reminder(intentMessage, prescription):
         take = Taken(global_prescription.medicine, dt_string, global_prescription.takes, "2")
         insert_taken(take)
         # mqttClient.publish_end_session(intentMessage.session_id, u'Supongo que no estás en casa. ¡Lo apunto!')
-        global_prescription = None
+        # global_prescription = None
 
 
 def appointment_reminder(intentMessage, appointment):
