@@ -41,7 +41,7 @@ def insert_interaction(_interaction):
     global cursor
     now = datetime.now()
     dt_string = now.strftime("%Y-%m-%d")
-    hour_string = now.strftime("%HH:%MM")
+    hour_string = now.strftime("%H:%M")
     query = "INSERT INTO Interaction(message, date, hour) VALUES (%s, %s, %s)"
     args = (_interaction, dt_string, hour_string)
     cursor.execute(query, args)
