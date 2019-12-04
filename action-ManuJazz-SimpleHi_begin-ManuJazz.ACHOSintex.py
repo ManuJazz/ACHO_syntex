@@ -9,6 +9,7 @@ from hermes_python.ontology import *
 import io
 from datetime import datetime, timedelta, date
 import mysql.connector as mariadb
+import random
 
 CONFIGURATION_ENCODING_FORMAT = "utf-8"
 CONFIG_INI = "config.ini"
@@ -92,6 +93,7 @@ def subscribe_answer_hi(hermes, intentMessage):
         mqttClient.publish_end_session(intentMessage.session_id, u'¡Tomo nota! Avísame si necesitas algo.')
 
 
+'''
 def subscribe_affirmation(hermes, intentMessage):
     global isChecking
     if isChecking is True:
@@ -105,6 +107,9 @@ def subscribe_negation(hermes, intentMessage):
         mqttClient.publish_end_session(intentMessage.session_id,
                                    'Entiendo. Si sales de casa no olvides llevar tus pastillas.')
         isChecking = False
+        
+        
+'''
 
 
 def subscribe_simple_hi(hermes, intentMessage):
@@ -114,30 +119,44 @@ def subscribe_simple_hi(hermes, intentMessage):
     global isChecking
     isAnswer = True
 
-    rows = get_forgotten_pills()
-    if rows is not None:
-        isChecking = True
-        mqttClient.publish_end_session(intentMessage.session_id,
-                                       u'Hola. Antes te he avisado de una toma de pastillas pero no me has respondido. ¿Estabas en casa?')
-        mqttClient.publish_start_session_action(site_id='default', session_init_text="",
-                                            session_init_intent_filter=["ManuJazz:Affirmation", "ManuJazz:Negation"],
-                                            session_init_can_be_enqueued=True,
-                                            session_init_send_intent_not_recognized=True, custom_data=None)
+    prob_reminder = random.randint(0, 3)
+    if prob_reminder == 0:
+        rows = get_forgotten_pills()
+        if rows is not None:
+            isChecking = True
+            mqttClient.publish_end_session(intentMessage.session_id,
+                                           u'Hola. Antes te he avisado de una toma de pastillas pero no me has respondido. Si sales recuerda llevar tus pastillas contigo. Por cierto, ¿qué tal estás?')
+            '''mqttClient.publish_start_session_action(site_id='default', session_init_text="",
+                                                session_init_intent_filter=["ManuJazz:Affirmation", "ManuJazz:Negation"],
+                                                session_init_can_be_enqueued=True,
+                                                session_init_send_intent_not_recognized=True, custom_data=None)
+            '''
 
     else:
         isChecking = False
-        mqttClient.publish_end_session(intentMessage.session_id, u'Hola. ¿Qué tal estás?')
-        mqttClient.publish_start_session_action(site_id='default', session_init_text="",
-                                                session_init_intent_filter=["ManuJazz:SimpleHi_answer"],
-                                                session_init_can_be_enqueued=True,
-                                                session_init_send_intent_not_recognized=True, custom_data=None)
+        hi_message = ["Hola", "Buenas", u"¿Qué hay?"]
+        prob_advice = random.randint(0, 2)
+        advice = ""
+        if prob_advice is 0:
+            advices = [u"Recuerda beber abundante agua. Te mantendrá hidratado y tiene importantes beneficios",
+                       u"¡Recuerda llevar una dieta equilibrada y saludable!",
+                       u"¡Qué frío hace!"]
+            advice = ". " + advices[random.randint(0, 3)]
+
+        message = hi_message[random.randint(0, 3)] + advice + u'. ¿Qué tal estás?'
+        mqttClient.publish_end_session(intentMessage.session_id, message)
+
+    mqttClient.publish_start_session_action(site_id='default', session_init_text="",
+                                            session_init_intent_filter=["ManuJazz:SimpleHi_answer"],
+                                            session_init_can_be_enqueued=True,
+                                            session_init_send_intent_not_recognized=True, custom_data=None)
 
 
 if __name__ == "__main__":
     mqtt_opts = MqttOptions()
     with Hermes(mqtt_options=mqtt_opts) as h, Hermes(mqtt_options=mqtt_opts) as mqttClient:
         h.subscribe_intent("ManuJazz:SimpleHi_begin", subscribe_simple_hi) \
-            .subscribe_intent("ManuJazz:Affirmation", subscribe_affirmation) \
-            .subscribe_intent("ManuJazz:Negation", subscribe_negation) \
             .subscribe_intent("ManuJazz:SimpleHi_answer", subscribe_answer_hi) \
             .start()
+        # .subscribe_intent("ManuJazz:Affirmation", subscribe_affirmation) \
+        # .subscribe_intent("ManuJazz:Negation", subscribe_negation) \

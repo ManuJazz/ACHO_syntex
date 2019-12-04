@@ -121,12 +121,14 @@ def prescription_reminder(intentMessage, prescription):
 
     # check if it's been three time announced
     if global_prescription.notices == 3:
-        # registered as non answered
+        backReminder.remove_job(identity)
+        # registered as not answered
         now = datetime.now()
         dt_string = now.strftime("%Y-%m-%d")
         take = Taken(global_prescription.medicine, dt_string, global_prescription.takes, "2")
         insert_taken(take)
-        backReminder.remove_job(identity)
+        # mqttClient.publish_end_session(intentMessage.session_id, u'Supongo que no estás en casa. ¡Lo apunto!')
+        global_prescription = None
 
 
 def appointment_reminder(intentMessage, appointment):
@@ -279,8 +281,10 @@ def subscribe_taken_medicine(hermes, intentMessage):
         dt_string = now.strftime("%Y-%m-%d")
         take = Taken(global_prescription.medicine, dt_string, global_prescription.takes, "1")
         insert_taken(take)
+        # set parameters to cero
         global_prescription.notices = 0
         global_prescription = None
+
         mqttClient.publish_end_session(intentMessage.session_id, 'Perfecto. Me lo apunto')
 
 
@@ -291,10 +295,6 @@ def subscribe_not_taken_medicine(hermes, intentMessage):
         take = Taken(global_prescription.medicine, dt_string, global_prescription.takes, "0")
         insert_taken(take)
         mqttClient.publish_end_session(intentMessage.session_id, u'De acuerdo. Te lo recordaré dentro de un momento')
-        '''
-        if global_prescription.notices == 1:
-            identity = global_prescription.medicine
-        '''
 
 
 if __name__ == "__main__":
