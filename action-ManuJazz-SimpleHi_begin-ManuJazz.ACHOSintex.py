@@ -134,15 +134,15 @@ def subscribe_simple_hi(hermes, intentMessage):
     else:
         isChecking = False
         hi_message = ["Hola", "Buenas", u"¿Qué hay?"]
-        prob_advice = random.randint(0, 3)
+        prob_advice = random.randint(0, 2)
         advice = ""
         if prob_advice == 0:
             advices = [u"Recuerda beber abundante agua. Te mantendrá hidratado y tiene importantes beneficios",
                        u"¡Recuerda llevar una dieta equilibrada y saludable!",
                        u"¡Qué frío hace!"]
-            advice = ". " + advices[random.randint(0, 3)]
+            advice = ". " + advices[random.randint(0, 2)]
 
-        message = hi_message[random.randint(0, 3)] + advice + u'. ¿Qué tal estás?'
+        message = hi_message[random.randint(0, 2)] + advice + u'. ¿Qué tal estás?'
         mqttClient.publish_end_session(intentMessage.session_id, message)
 
     mqttClient.publish_start_session_action(site_id='default', session_init_text="",
