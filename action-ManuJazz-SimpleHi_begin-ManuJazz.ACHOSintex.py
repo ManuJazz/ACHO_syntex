@@ -15,6 +15,7 @@ CONFIG_INI = "config.ini"
 
 mariadb_connection = None
 cursor = None
+isAnswer = False
 
 
 class SnipsConfigParser(configparser.SafeConfigParser):
@@ -65,16 +66,21 @@ def insert_interaction(_interaction):
 
 
 def subscribe_answer_hi(hermes, intentMessage):
-    connect_database()
-    answer = intentMessage.input
-    #insert_interaction(answer)
-    insert_mood(answer)
-    mqttClient.publish_end_session(intentMessage.session_id, u'¡Tomo nota! Avísame si necesitas algo.')
+    global isAnswer
+    if isAnswer is True:
+        connect_database()
+        answer = intentMessage.input
+        #insert_interaction(answer)
+        insert_mood(answer)
+        isAnswer = False
+        mqttClient.publish_end_session(intentMessage.session_id, u'¡Tomo nota! Avísame si necesitas algo.')
 
 
 def subscribe_simple_hi(hermes, intentMessage):
     connect_database()
     insert_interaction(intentMessage.input)
+    global isAnswer
+    isAnswer = True
     mqttClient.publish_end_session(intentMessage.session_id, u'Hola. ¿Qué tal estás?')
     mqttClient.publish_start_session_action(site_id='default', session_init_text="",
                                             session_init_intent_filter=["ManuJazz:SimpleHi_answer"],

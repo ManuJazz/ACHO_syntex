@@ -32,8 +32,8 @@ def get_taken_pills():
     query = "SELECT * FROM Taken WHERE taken = '1' AND day = %s"
     args = (dt_string,)
     rows_count = cursor.execute(query, args)
-    if rows_count > 0:
-        rows = cursor.fetchall()
+    rows = cursor.fetchall()
+    if cursor.rowcount > 0:
         return rows
     else:
         return None
@@ -93,7 +93,7 @@ def action_wrapper(hermes, intentMessage, conf):
             medicine = medicine + take[1] + " a las " + take[2] + ", "
         message = sentence + medicine
     else:
-        message = "Todavía no has tomado ninguna medicina"
+        message = u"Todavía no has tomado ninguna medicina"
     mqttClient.publish_end_session(intentMessage.session_id, message)
 
 
