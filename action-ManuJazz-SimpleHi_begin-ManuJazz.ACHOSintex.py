@@ -119,7 +119,7 @@ def subscribe_simple_hi(hermes, intentMessage):
     global isChecking
     isAnswer = True
 
-    prob_reminder = random.randint(0, 3)
+    prob_reminder = random.randint(0, 5)
     rows = get_forgotten_pills()
     if prob_reminder == 0 and rows is not None:
         isChecking = True
@@ -136,7 +136,7 @@ def subscribe_simple_hi(hermes, intentMessage):
         hi_message = ["Hola", "Buenas", u"¿Qué hay?"]
         prob_advice = random.randint(0, 3)
         advice = ""
-        if prob_advice is 0:
+        if prob_advice == 0:
             advices = [u"Recuerda beber abundante agua. Te mantendrá hidratado y tiene importantes beneficios",
                        u"¡Recuerda llevar una dieta equilibrada y saludable!",
                        u"¡Qué frío hace!"]
