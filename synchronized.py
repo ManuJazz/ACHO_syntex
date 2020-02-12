@@ -298,6 +298,7 @@ def subscribe_not_taken_medicine(hermes, intentMessage):
 
 
 if __name__ == "__main__":
+    # os.system('sudo obexpushd -B -o /bluetooth -n &') # uncomment for bluetooth activation if first attempt fails
     mqtt_opts = MqttOptions()
     thread = update_prescriptions()
     thread.start()
