@@ -26,6 +26,7 @@ CONFIG_INI = "config.ini"
 cursor = None
 global_prescription = None
 mariadb_connection = None
+closed_connection = True
 
 
 def insert_prescription(prescription):
@@ -49,10 +50,15 @@ def insert_appointment(appointment):
 def insert_taken(take):
     global cursor
     global mariadb_connection
+    global closed_connection
+    if closed_connection is True:
+        connect_database()
+
     query = "INSERT INTO Taken(medicine, day, hour, taken) VALUES (%s, %s, %s, %s)"
     args = (take.medicine, take.day, take.hour[:-3], take.taken)
     cursor.execute(query, args)
     mariadb_connection.commit()
+    disconnect_database()
 
 
 def clean_appointments():
@@ -97,6 +103,8 @@ def say(intentMessage, text):
 def prescription_reminder(intentMessage, prescription):
     global global_prescription
     global_prescription = prescription
+    connect_database()
+
     print("Evento detectado para: %s" % datetime.now())
     say(intentMessage, "Hola. A esta hora debes tomar " + prescription.medicine + ". " + prescription.description)
     content = "[" + str(datetime.today()) + "] Reminder announced: " + prescription.medicine + "\n"
@@ -127,6 +135,7 @@ def prescription_reminder(intentMessage, prescription):
         dt_string = now.strftime("%Y-%m-%d")
         take = Taken(global_prescription.medicine, dt_string, global_prescription.takes, "2")
         insert_taken(take)
+        global_prescription.notices = 0
         # mqttClient.publish_end_session(intentMessage.session_id, u'Supongo que no estás en casa. ¡Lo apunto!')
         # global_prescription = None
 
@@ -174,6 +183,25 @@ class Taken(object):
         self.taken = taken
 
 
+def connect_database():
+    global mariadb_connection
+    global cursor
+    global closed_connection
+    mariadb_connection = mariadb.connect(host='localhost', user='root', password='', database='AchoSintex',
+                                         connection_timeout=20)
+    cursor = mariadb_connection.cursor()
+    closed_connection = False
+
+
+def disconnect_database():
+    global mariadb_connection
+    global cursor
+    global closed_connection
+    cursor.close()
+    mariadb_connection.close()
+    closed_connection = True
+
+
 class update_prescriptions(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
@@ -191,10 +219,6 @@ class update_prescriptions(threading.Thread):
             time.sleep(1)
 
             # once mysql is ready it will break out of while loop and continue to
-        mariadb_connection = mariadb.connect(host='localhost', user='root', password='', database='AchoSintex',
-                                             connection_timeout=20)
-        cursor = mariadb_connection.cursor()
-
         with open("/var/lib/snips/skills/ManuJazz.ACHOSintex/monitoring_output.txt", "a") as text_file:
             content = "[Thread restarted] [Trying... first announce]"
             text_file.write(content)
@@ -208,6 +232,8 @@ class update_prescriptions(threading.Thread):
             # if there’s a file to process
             filename = "/bluetooth/full_information.txt"
             if os.path.isfile(filename):
+                connect_database()
+
                 scheduler.shutdown(wait=False)
                 scheduler = BackgroundScheduler({'apscheduler.timezone': 'Europe/Madrid'})
                 scheduler.start()
@@ -265,13 +291,14 @@ class update_prescriptions(threading.Thread):
                 with open("/var/lib/snips/skills/ManuJazz.ACHOSintex/monitoring_output.txt", "a") as text_file:
                     content = "[Done... sync done announce]\n"
                     text_file.write(content)
+                disconnect_database()
             time.sleep(1)
 
 
 def subscribe_taken_medicine(hermes, intentMessage):
     global global_prescription
     if global_prescription is not None:
-        if global_prescription.notices != 3:
+        if global_prescription.notices != 3 and global_prescription.notices != 0:
             # back reminder is deleted
             identity = global_prescription.medicine
             backReminder.remove_job(identity)
