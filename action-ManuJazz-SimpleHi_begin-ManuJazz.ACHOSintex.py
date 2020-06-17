@@ -151,11 +151,24 @@ def subscribe_simple_hi(hermes, intentMessage):
                                             session_init_send_intent_not_recognized=True, custom_data=None)
 
 
+def subscribe_volume_query(hermes, intentMessage):
+    volume = ""
+    volumeActions = {
+        "VolumeDown": "10dB-",
+        "VolumeUp": "10dB+"
+    }
+    print(intentMessage.slots)
+    volume = volumeActions.get("", "0dB+")
+
+
+
 if __name__ == "__main__":
     mqtt_opts = MqttOptions()
     with Hermes(mqtt_options=mqtt_opts) as h, Hermes(mqtt_options=mqtt_opts) as mqttClient:
-        h.subscribe_intent("ManuJazz:SimpleHi_begin", subscribe_simple_hi) \
+        h\
+            .subscribe_intent("ManuJazz:SimpleHi_begin", subscribe_simple_hi) \
             .subscribe_intent("ManuJazz:SimpleHi_answer", subscribe_answer_hi) \
+            .subscribe_intent("ManuJazz:Volume_query", subscribe_volume_query) \
             .start()
         # .subscribe_intent("ManuJazz:Affirmation", subscribe_affirmation) \
         # .subscribe_intent("ManuJazz:Negation", subscribe_negation) \
