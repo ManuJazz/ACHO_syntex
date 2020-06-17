@@ -152,15 +152,15 @@ def subscribe_simple_hi(hermes, intentMessage):
 
 
 def subscribe_volume_query(hermes, intentMessage):
-    volume = ""
+    volumen = ""
     if len(intentMessage.slots.VolumeDown) > 0:
+        volumen = "10dB-"
         print(intentMessage.slots.VolumeDown.first().value)
-        volume = "10dB-"
     if len(intentMessage.slots.VolumeUp) > 0:
+        volumen = "10dB+"
         print(intentMessage.slots.VolumeUp.first().value)
-        volume = "10dB+"
-    os.system("amixer set Speaker -c 1 "+volume)
-    mqttClient.publish_end_session(intentMessage.session_id,'Hecho')
+    os.system("amixer set Speaker -c 1 "+volumen)
+    mqttClient.publish_end_session(intentMessage.session_id, 'Hecho')
 
 
 if __name__ == "__main__":
