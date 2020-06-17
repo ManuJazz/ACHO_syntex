@@ -10,6 +10,7 @@ import io
 from datetime import datetime, timedelta, date
 import mysql.connector as mariadb
 import random
+import os
 
 CONFIGURATION_ENCODING_FORMAT = "utf-8"
 CONFIG_INI = "config.ini"
