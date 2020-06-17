@@ -119,8 +119,7 @@ def action_wrapper(hermes, intentMessage, conf):
 def subscribe_pendentPills(hermes, intentMessage):
     connect_database()
     insert_interaction(intentMessage.input)
-
-    rows = get_taken_pills()
+    rows = get_pendent_pills()
     sentence = u"Para el resto del día, te queda: "
     medicine = ""
     if rows is not None:
