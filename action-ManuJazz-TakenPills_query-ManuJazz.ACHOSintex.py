@@ -96,9 +96,13 @@ def action_wrapper(hermes, intentMessage, conf):
         message = u"Todavía no has tomado ninguna medicina"
     mqttClient.publish_end_session(intentMessage.session_id, message)
 
+def subscribe_pendentPills(hermes, intentMessage):
+    # action
 
 if __name__ == "__main__":
     mqtt_opts = MqttOptions()
     with Hermes(mqtt_options=mqtt_opts) as h, Hermes(mqtt_options=mqtt_opts) as mqttClient:
-        h.subscribe_intent("ManuJazz:TakenPills_query", subscribe_intent_callback) \
+        h \
+        .subscribe_intent("ManuJazz:TakenPills_query", subscribe_intent_callback) \
+        .subscribe_intent("ManuJazz:PendentPills_query", subscribe_pendentPills) \
             .start()
