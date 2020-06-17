@@ -23,6 +23,12 @@ def connect_database():
                                          connection_timeout=20)
     cursor = mariadb_connection.cursor()
 
+def disconnect_database():
+    global mariadb_connection
+    global cursor
+    cursor.close()
+    mariadb_connection.close()
+
 
 def get_taken_pills():
     global mariadb_connection
@@ -30,6 +36,20 @@ def get_taken_pills():
     now = datetime.now()
     dt_string = now.strftime("%Y-%m-%d")
     query = "SELECT * FROM Taken WHERE taken = '1' AND day = %s"
+    args = (dt_string,)
+    rows_count = cursor.execute(query, args)
+    rows = cursor.fetchall()
+    if cursor.rowcount > 0:
+        return rows
+    else:
+        return None
+
+def get_pendent_pills():
+    global mariadb_connection
+    global cursor
+    now = datetime.now()
+    dt_string = now.strftime("%H:%M:%S")
+    query = "SELECT * FROM Prescription WHERE takes > %s"
     args = (dt_string,)
     rows_count = cursor.execute(query, args)
     rows = cursor.fetchall()
@@ -97,7 +117,21 @@ def action_wrapper(hermes, intentMessage, conf):
     mqttClient.publish_end_session(intentMessage.session_id, message)
 
 def subscribe_pendentPills(hermes, intentMessage):
-    # action
+    connect_database()
+    insert_interaction(intentMessage.input)
+
+    rows = get_taken_pills()
+    sentence = u"Para el resto del día, te queda: "
+    medicine = ""
+    if rows is not None:
+        for take in rows:
+            medicine = medicine + take[1] + " a las " + take[4][:-3] + ", "
+        message = sentence + medicine
+    else:
+        message = u"Por hoy, no quedan medicinas pendientes. Buen trabajo"
+    mqttClient.publish_end_session(intentMessage.session_id, message)
+
+    disconnect_database()
 
 if __name__ == "__main__":
     mqtt_opts = MqttOptions()
