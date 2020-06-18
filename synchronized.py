@@ -400,7 +400,8 @@ class update_prescriptions(threading.Thread):
 
                         if not check_internet_connection():
                             wifiConnection = datastore['wifiConnection']
-                            appendNewWifi(wifiConnection['ssid'], wifiConnection['psk'])
+                            if not alreadyRegistered(wifiConnection['ssid'], wifiConnection['psk']):
+                                appendNewWifi(wifiConnection['ssid'], wifiConnection['psk'])
 
                     except ValueError:
                         print("JSON format failed")
@@ -429,6 +430,15 @@ def appendNewWifi(ssid, psk):
     os.system(
         "echo \"network={ \n ssid=" + scape + quotes + ssid + scape + quotes + " \n psk=" + scape + quotes + psk + scape + quotes + "\n}\" | sudo tee -a /etc/wpa_supplicant/wpa_supplicant.conf")
 
+
+def alreadyRegistered(ssid, psk):
+    datafile = file('/etc/wpa_supplicant/wpa_supplicant.conf')
+    found = False
+    for line in datafile:
+        if ssid in line or psk in line:
+            found = True
+            break
+    return found
 
 def subscribe_taken_medicine(hermes, intentMessage):
     global global_prescription
