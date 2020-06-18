@@ -492,7 +492,9 @@ def subscribe_not_taken_medicine(hermes, intentMessage):
 def subscribe_internet_connection(hermes, intentMessage):
     print("\nInternet checking\n")
     if check_internet_connection():
-        mqttClient.publish_end_session(intentMessage.session_id, u'¡Sí! Estoy conectado a la red')
+        ssid = os.popen("iwgetid").read()
+        ssid = ssid.split("\"")[1]
+        mqttClient.publish_end_session(intentMessage.session_id, u'¡Sí! Estoy conectado a la red '+ssid)
     else:
         mqttClient.publish_end_session(intentMessage.session_id, u'Ahora mismo no tengo conexión a internet. Prueba a especificar la red wifi desde la aplicación y sincronízame.')
 
